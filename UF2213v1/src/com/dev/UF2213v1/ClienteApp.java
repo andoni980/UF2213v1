@@ -15,8 +15,9 @@ public class ClienteApp {
 	
 	private static final String CAMPOS = "dni,dni_diferencial,nombre,apellidos,fecha_nacimiento";
 	private static final String SELECT_ALL = "SELECT id, " + CAMPOS + " FROM clientes";
-	private static final String SELECT_BY_ID = "SELECT " + CAMPOS + " FROM clientes WHERE id = ?";
+	private static final String SELECT_BY_ID = "SELECT " + CAMPOS + " FROM clientes WHERE id=?";
 	private static final String INSERT = "INSERT INTO clientes ( " + CAMPOS + ") VALUES(?,?,?,?,?)";
+	private static final String UPDATE = "UPDATE clientes SET dni=?, dni_diferencial=?, nombre=?, apellidos=?, fecha_nacimiento=? WHERE id=?";
 	
 	private static Connection con;
 
@@ -27,8 +28,9 @@ public class ClienteApp {
 			
 			getAll();
 			getById(2L);
-			save("45678765R", 2, "Iker", "Vargas", LocalDate.of(2013,02,15));
+//			save("45678765R", 2, "Iker", "Vargas", LocalDate.of(2013,02,15));
 			getAll();
+			update(4L,"45678765R", 2, "Iker", "Vargassssss", LocalDate.of(2013,02,15));
 			
 		} catch (SQLException e) {
 			System.err.println("No se ha podido realizar la conexión");
@@ -98,6 +100,25 @@ public class ClienteApp {
 			System.out.println("Número de Registros insertados: " + numeroRegistrosInsertados);
 		} catch (SQLException e) {
 			System.err.println("No se ha podido realizar la consulta save()");
+			System.err.println(e.getMessage());
+		}
+	}
+	
+	private static void update(Long id, String dni, Integer dniDiferencial, String nombre, String apellidos, LocalDate fechaNacimiento) {
+		try (PreparedStatement pstmt = con.prepareStatement(UPDATE)) {
+			
+			pstmt.setString(1, dni);
+			pstmt.setInt(2, dniDiferencial);
+			pstmt.setString(3, nombre);
+			pstmt.setString(4, apellidos);
+			pstmt.setDate(5, java.sql.Date.valueOf(fechaNacimiento));
+			pstmt.setLong(6, id);
+			
+			int numeroRegistrosModificados = pstmt.executeUpdate();
+			System.out.println("Número de Registros modificados: " + numeroRegistrosModificados);
+			
+		} catch (SQLException e) {
+			System.err.println("No se ha podido realizar la consulta update()");
 			System.err.println(e.getMessage());
 		}
 	}
