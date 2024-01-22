@@ -49,7 +49,6 @@ public class ClienteApp {
 //			save("45678765R", 2, "Iker", "Vargas", LocalDate.of(2013,02,15));
 //			save("34343434r", 3, "paborrar", "paborrarrez", LocalDate.of(2014, 3, 3));
 //			update(4L,"45678765w", 2, "Iker", "Vargassssss", LocalDate.of(2013,02,15));
-//			delete(6L);
 			
 		} catch (SQLException e) {
 			System.err.println("No se ha podido realizar la conexión");
@@ -69,7 +68,7 @@ public class ClienteApp {
 				4. MODIFICAR CLIENTE
 				5. BORRAR CLIENTE
 				
-				0.SALIR
+				0. SALIR
 				
 				""");
 	}
@@ -115,8 +114,8 @@ public class ClienteApp {
 			ResultSet rs = pstmt.executeQuery()) {
 			
 			while(rs.next()) {
-			 System.out.printf("%s\t;%s\t;%s\t;%s\t;%s\t;%s%n",
-//			System.out.printf("%2s %s %3s %-10s %-20s %s\n",
+//			 System.out.printf("%s\t;%s\t;%s\t;%s\t;%s\t;%s%n",
+			System.out.printf("%2s %s %3s %-15s %-30s %s\n",
 					rs.getString("id"),
 					rs.getString("dni"),
 					rs.getString("dni_diferencial"),
@@ -162,6 +161,13 @@ public class ClienteApp {
 			System.err.println("No se ha podido realizar la consulta getById");
 			System.err.println(e.getMessage());
 		}
+	}
+	
+	private static void save() {
+		String dni = readString("DNI");
+		Integer dniDiferencial = readInt("DNI diferencial");
+		String nombre = readString("Nombre");
+		String apellidos = readString("Apellidos", OPCIONAL);
 	}
 	
 	private static void save(String dni, Integer dniDiferencial, String nombre, String apellidos, LocalDate fechaNacimiento) {

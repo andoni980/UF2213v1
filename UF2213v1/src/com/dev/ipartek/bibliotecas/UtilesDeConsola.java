@@ -8,9 +8,29 @@ public class UtilesDeConsola {
 	
 	private static final Scanner sc =  new Scanner(System.in);
 	
+	public static final boolean OPCIONAL = true;
+	public static final boolean OBLIGATORIO = false;
+	
 	public static String readString(String mensaje) {
-		System.out.print(mensaje + ": ");
-		return sc.nextLine();
+		return readString(mensaje, OBLIGATORIO);
+	}
+	
+	public static String readString(String mensaje, boolean opcional) {
+		String texto;
+		boolean repetir = true;
+		
+		do {
+			System.out.println(mensaje + ": ");
+			texto = sc.nextLine();
+			
+			if(!opcional && texto.trim().length() == 0) {
+				System.out.println("Este dato es obligatorio");
+			}else {
+				repetir = false;
+			}
+		}while(repetir);
+		
+		return texto.trim().length() > 0 ? texto : null;
 	}
 	
 	public static Long readLong(String mensaje) {
