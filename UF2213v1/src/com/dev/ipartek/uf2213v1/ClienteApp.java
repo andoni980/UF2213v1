@@ -44,10 +44,6 @@ public class ClienteApp {
 				ejecutarOpcion(opcion);
 			}while(opcion != SALIR);
 			
-			
-			
-//			save("45678765R", 2, "Iker", "Vargas", LocalDate.of(2013,02,15));
-//			save("34343434r", 3, "paborrar", "paborrarrez", LocalDate.of(2014, 3, 3));
 //			update(4L,"45678765w", 2, "Iker", "Vargassssss", LocalDate.of(2013,02,15));
 			
 		} catch (SQLException e) {
@@ -89,10 +85,10 @@ public class ClienteApp {
 			find();
 			break;
 		case INSERTAR:
-//			save();
+			save();
 			break;
 		case MODIFICAR:
-//			update();
+			update();
 			break;
 		case BORRAR:
 			delete();
@@ -104,9 +100,6 @@ public class ClienteApp {
 			System.out.println("No conozco esa opción");
 		}
 	}
-
-
-
 
 	private static void getAll() {
 		
@@ -168,6 +161,9 @@ public class ClienteApp {
 		Integer dniDiferencial = readInt("DNI diferencial");
 		String nombre = readString("Nombre");
 		String apellidos = readString("Apellidos", OPCIONAL);
+		LocalDate fechaNacimiento = readFecha("Fecha de nacimiento", OPCIONAL, LocalDate.of(1900,1,1), LocalDate.now().minusYears(18));
+		
+		save(dni, dniDiferencial, nombre, apellidos, fechaNacimiento);
 	}
 	
 	private static void save(String dni, Integer dniDiferencial, String nombre, String apellidos, LocalDate fechaNacimiento) {
@@ -184,6 +180,18 @@ public class ClienteApp {
 			System.err.println("No se ha podido realizar la consulta save()");
 			System.err.println(e.getMessage());
 		}
+	}
+	
+	private static void update() {
+		Long id = readLong("Introduce el id del elemento a modificar");
+		
+		String dni = readString("DNI");
+		Integer dniDiferencial = readInt("DNI diferencial", OPCIONAL);
+		String nombre = readString("Nombre");
+		String apellidos = readString("Apellidos", OPCIONAL);
+		LocalDate fechaNacimiento = readFecha("Fecha de Nacimiento", OPCIONAL, LocalDate.of(1900, 1, 1), LocalDate.now().minusYears(18));
+		
+		update(id, dni, dniDiferencial, nombre, apellidos, fechaNacimiento);
 	}
 	
 	private static void update(Long id, String dni, Integer dniDiferencial, String nombre, String apellidos, LocalDate fechaNacimiento) {
