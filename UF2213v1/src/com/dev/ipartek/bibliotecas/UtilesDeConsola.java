@@ -34,15 +34,19 @@ public class UtilesDeConsola {
 	}
 	
 	public static Long readLong(String mensaje) {
+		return readLong(mensaje, OBLIGATORIO);
+	}
+	
+	public static Long readLong(String mensaje, boolean opcional) {
 		boolean hayError = true;
 		long longDato = 0;
 		
 		do {
 			try {
 					
-				String dato = readString(mensaje);
+				String dato = readString(mensaje, opcional);
 				
-				if(dato.trim().length() == 0) {
+				if(dato == null) {
 					return null; 
 				}
 				
@@ -58,23 +62,40 @@ public class UtilesDeConsola {
 	
 
 	public static Integer readInt(String mensaje) {
-		return readInt(mensaje, false);
+		return readInt(mensaje, OBLIGATORIO);
 	}
 	
 	public static Integer readInt(String mensaje, boolean opcional) {
+		return readInt(mensaje, opcional, null, null);
+	}
+	
+	public static Integer readInt(String mensaje, boolean opcional, Integer minimo, Integer maximo) {
 		boolean hayError = true;
 		int intDato = 0;
 		
+		if(minimo == null) {
+			minimo = Integer.MIN_VALUE;
+		}
+		
+		if(maximo == null) {
+			maximo = Integer.MAX_VALUE;
+		}
+		
 		do {
 			try {
-				String dato = readString(mensaje);
+				String dato = readString(mensaje, opcional);
 			
-				if(opcional && dato.trim().length() == 0) {
+				if(dato == null) {
 					return null;
 				}
 			
 				intDato = Integer.parseInt(dato);
-				hayError = false;
+				
+				if(intDato < minimo || intDato > maximo) {
+					System.out.println("El valor está fuera del rango permitido");
+				}else {
+					hayError = false;
+				}
 			}catch(NumberFormatException e) {
 				System.out.println("El número debe ser un entero entre " + Integer.MIN_VALUE + " y " + Integer.MAX_VALUE);
 			}
@@ -84,19 +105,41 @@ public class UtilesDeConsola {
 	}
 	
 	public static LocalDate readFecha(String mensaje) {
+		return readFecha(mensaje, OBLIGATORIO);
+	}
+	
+	public static LocalDate readFecha(String mensaje, boolean opcional) {
+		return readFecha(mensaje,opcional, null, null);
+	}
+	
+	public static LocalDate readFecha(String mensaje, boolean opcional, LocalDate minima, LocalDate maxima) {
 		boolean hayError = true;
 		LocalDate fecha = null;
 		
+		if(minima == null) {
+			minima = LocalDate.MIN;
+		}
+		
+		if(maxima == null) {
+			maxima = LocalDate.MAX;
+		}
+		
 		do {
 			try {
-				String dato = readString(mensaje + " [AAAA-MM-DD]");
+				String dato = readString(mensaje + " [AAAA-MM-DD]", opcional);
 				
-				if(dato.trim().length() == 0) {
+				if(dato == null) {
 					return null;
 				}
 				
 				fecha = LocalDate.parse(dato);
-				hayError = false;
+				
+				if(fecha.isBefore(minima) || fecha.isAfter(maxima)) {
+					System.out.println("Fecha fuera de los límites");
+				}else {
+					hayError = false;
+				}
+				
 			}catch(DateTimeParseException e) {
 				System.out.println("La fecha debe ser válida");
 			}
@@ -104,5 +147,8 @@ public class UtilesDeConsola {
 		
 		return fecha;
 	}
+	
+	
+	
 
 }
