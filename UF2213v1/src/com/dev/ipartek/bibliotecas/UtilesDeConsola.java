@@ -148,7 +148,24 @@ public class UtilesDeConsola {
 		return fecha;
 	}
 	
+	public static String readDni(String mensaje) {
+		return readDni(mensaje, OBLIGATORIO);
+	}
 	
-	
-
+	public static String readDni(String mensaje, boolean opcional) {
+		String texto;
+		boolean repetir = true;
+		
+		do {
+			texto = readString(mensaje, opcional);
+			
+			if(texto != null && !Dni.validarDni(texto)) {
+				System.out.println("El DNI no es válido");
+			}else {
+				repetir = false;
+			}
+		}while(repetir);
+		
+		return texto == null ? null : texto.trim().toUpperCase();
+	}
 }
