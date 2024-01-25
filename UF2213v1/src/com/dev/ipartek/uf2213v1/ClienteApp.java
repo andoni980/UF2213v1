@@ -22,7 +22,33 @@ public class ClienteApp {
 	private static final String SQL_INSERT = "INSERT INTO clientes ( " + SQL_CAMPOS + ") VALUES(?,?,?,?,?)";
 	private static final String SQL_UPDATE = "UPDATE clientes SET dni=?, dni_diferencial=?, nombre=?, apellidos=?, fecha_nacimiento=? WHERE id=?";
 	private static final String SQL_DELETE = "DELETE FROM clientes WHERE id=?";
-	private static final String SQL_BY_ID_CON_FACTURAS = "SELECT c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento, f.numero, f.fecha FROM clientes AS c JOIN facturas AS f ON f.clientes_id= c.id WHERE c.id = ?;";
+	private static final String SQL_BY_ID_CON_FACTURAS = """
+			SELECT 
+				c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento,
+				f.numero, f.fecha
+			 FROM clientes AS c
+			 JOIN facturas AS f
+			 ON f.clientes_id = c.id 
+			 WHERE c.id = ?;
+			""";
+	private static final String SQL_BY_ID_CON_FACTURAS_CON_PRODUCTOS = """
+		SELECT 
+			c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento,
+			f.numero, f.fecha, f.id,
+            fp.cantidad,
+            p.nombre, p.precio, p.id,
+            p.precio * fp.cantidad AS total
+            
+		FROM clientes AS c
+		JOIN facturas AS f
+		ON f.clientes_id = c.id 
+		JOIN facturas_has_productos AS fp
+		ON fp.facturas_id = f.id
+		JOIN productos AS p
+		ON fp.productos_id = p.id 
+		WHERE c.id = ?
+		ORDER BY f.id,p.id;
+		""";
 	
 	private static final int SALIR = 0;
 	private static final int VER_TODOS = 1;
@@ -31,6 +57,7 @@ public class ClienteApp {
 	private static final int MODIFICAR = 4;
 	private static final int BORRAR = 5;
 	private static final int BUSCAR_POR_ID_CON_FACTURAS = 6;
+	private static final int BUSCAR_POR_ID_CON_FACTURAS_CON_PRODUCTOS = 7;
 	
 	private static Connection con;
 
@@ -45,9 +72,6 @@ public class ClienteApp {
 				opcion = pedirOpcion();
 				ejecutarOpcion(opcion);
 			}while(opcion != SALIR);
-			
-//			update(4L,"45678765w", 2, "Iker", "Vargassssss", LocalDate.of(2013,02,15));
-			
 		} catch (SQLException e) {
 			System.err.println("No se ha podido realizar la conexión");
 			System.err.println(e.getMessage());
@@ -66,6 +90,7 @@ public class ClienteApp {
 				4. MODIFICAR CLIENTE
 				5. BORRAR CLIENTE
 				6. BUSCAR POR ID CON FACTURAS
+				7. BUSCAR POR ID CON FACTURAS Y PRODUCTOS
 				
 				0. SALIR
 				
@@ -99,6 +124,9 @@ public class ClienteApp {
 		case BUSCAR_POR_ID_CON_FACTURAS:
 			findWithFacturas();
 			break;
+		case BUSCAR_POR_ID_CON_FACTURAS_CON_PRODUCTOS:
+			findWithFacturasWithProductos();
+			break;
 		case SALIR:
 			System.out.println("Nos vemos pronto");
 			break;
@@ -106,8 +134,6 @@ public class ClienteApp {
 			System.out.println("No conozco esa opción");
 		}
 	}
-
-
 
 	private static void getAll() {
 		
@@ -246,9 +272,7 @@ public class ClienteApp {
 						
 						isClienteMostrado = true;
 					}
-					System.out.printf("%s, %s\n"
-							,rs.getString("f.numero")
-							,rs.getString("f.fecha"));
+					mostrarFactura(rs);
 				}
 			}
 			
@@ -256,6 +280,69 @@ public class ClienteApp {
 			System.err.println("No se ha podido realizar la consulta getByIdConFacturas()");
 			System.err.println(e.getMessage());
 		}
+	}
+	
+	private static void findWithFacturasWithProductos() {
+		long id = readLong("Introduce el ID del cliente a buscar");
+		getByIdConFacturasConProductos(id);
+	}
+	
+	private static void getByIdConFacturasConProductos(Long id) {
+		boolean isClienteMostrado = false;
+		Long idFacturaAnterior = null;
+		
+		try (PreparedStatement pstmt = con.prepareStatement(SQL_BY_ID_CON_FACTURAS_CON_PRODUCTOS)) {
+			pstmt.setLong(1, id);
+			
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while(rs.next()) {
+					if(!isClienteMostrado) {
+						mostrarCliente(rs);
+						
+						isClienteMostrado = true;
+					}
+					
+					Long idFacturaActual = Long.parseLong(rs.getString("f.id"));
+					if(idFacturaActual != idFacturaAnterior ) {
+						mostrarFactura(rs);
+					}
+					mostrarProducto(rs);
+					
+					idFacturaAnterior = idFacturaActual;
+				}
+			}
+		} catch (SQLException e) {
+			System.err.println("No se ha podido realizar la consulta getByIdConFacturasConProductos()");
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	private static void mostrarProducto(ResultSet rs) throws SQLException {
+		System.out.printf("""
+				
+					PRODUCTO
+					--------
+					\tNombre:        %s
+					\tCantidad:      %s
+					\tPrecio:        %s\n
+					\tTOTAL:%s\n\n""",
+				rs.getString("p.nombre"),
+				rs.getString("fp.cantidad"),
+				rs.getString("p.precio"),
+				rs.getString("total"));
+	}
+
+	private static void mostrarFactura(ResultSet rs) throws SQLException {
+		System.out.printf(
+				"""
+				FACTURA
+				-------
+				Factura Número:      %s
+				Fecha:               %s
+				""",
+				rs.getString("f.numero")
+				,rs.getString("f.fecha"));
 	}
 	
 	private static void mostrarCliente(ResultSet rs) throws SQLException {
