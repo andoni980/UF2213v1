@@ -17,11 +17,12 @@ public class ClienteApp {
 	private static final String PASS = "root";
 	
 	private static final String SQL_CAMPOS = "dni,dni_diferencial,nombre,apellidos,fecha_nacimiento";
-	private static final String SQL_SELECT_ALL = "SELECT id, " + SQL_CAMPOS + " FROM clientes";
-	private static final String SQL_SELECT_BY_ID = "SELECT " + SQL_CAMPOS + " FROM clientes WHERE id=?";
+	private static final String SQL_SELECT_ALL = "SELECT id, " + SQL_CAMPOS + " FROM clientes ";
+	private static final String SQL_SELECT_BY_ID = "SELECT id, " + SQL_CAMPOS + " FROM clientes c WHERE id=?";
 	private static final String SQL_INSERT = "INSERT INTO clientes ( " + SQL_CAMPOS + ") VALUES(?,?,?,?,?)";
 	private static final String SQL_UPDATE = "UPDATE clientes SET dni=?, dni_diferencial=?, nombre=?, apellidos=?, fecha_nacimiento=? WHERE id=?";
 	private static final String SQL_DELETE = "DELETE FROM clientes WHERE id=?";
+	private static final String SQL_BY_ID_CON_FACTURAS = "SELECT c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento, f.numero, f.fecha FROM clientes AS c JOIN facturas AS f ON f.clientes_id= c.id WHERE c.id = ?;";
 	
 	private static final int SALIR = 0;
 	private static final int VER_TODOS = 1;
@@ -29,6 +30,7 @@ public class ClienteApp {
 	private static final int INSERTAR = 3;
 	private static final int MODIFICAR = 4;
 	private static final int BORRAR = 5;
+	private static final int BUSCAR_POR_ID_CON_FACTURAS = 6;
 	
 	private static Connection con;
 
@@ -63,6 +65,7 @@ public class ClienteApp {
 				3. INSERTAR CLIENTE
 				4. MODIFICAR CLIENTE
 				5. BORRAR CLIENTE
+				6. BUSCAR POR ID CON FACTURAS
 				
 				0. SALIR
 				
@@ -93,6 +96,9 @@ public class ClienteApp {
 		case BORRAR:
 			delete();
 			break;
+		case BUSCAR_POR_ID_CON_FACTURAS:
+			findWithFacturas();
+			break;
 		case SALIR:
 			System.out.println("Nos vemos pronto");
 			break;
@@ -100,6 +106,8 @@ public class ClienteApp {
 			System.out.println("No conozco esa opción");
 		}
 	}
+
+
 
 	private static void getAll() {
 		
@@ -133,20 +141,7 @@ public class ClienteApp {
 			pstmt.setLong(1, id);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if(rs.next()) {
-					System.out.printf("""
-							ID:					%s
-							DNI:				%s
-							DNI_DIFERENCIAL:	%s
-							NOMBRE:				%s
-							APELLIDOS:			%s
-							FECHA DE NACIMIENTO	%s\n	
-							""",
-					id,
-					rs.getString("dni"),
-					rs.getString("dni_diferencial"),
-					rs.getString("nombre"),
-					rs.getString("apellidos"),
-					rs.getString("fecha_nacimiento"));
+					mostrarCliente(rs);
 				}
 			}
 			
@@ -155,7 +150,7 @@ public class ClienteApp {
 			System.err.println(e.getMessage());
 		}
 	}
-	
+
 	private static void save() {
 		String dni = readString("DNI");
 		Integer dniDiferencial = readInt("DNI diferencial");
@@ -232,5 +227,59 @@ public class ClienteApp {
 			System.err.println(e.getMessage());
 		}
 	}
+	
+	private static void findWithFacturas() {
+		long id = readLong("Introduce el ID del cliente a buscar");
+		getByIdConFacturas(id);
+	}
+	
+	private static void getByIdConFacturas(Long id) {
+		boolean isClienteMostrado = false;
+		
+		try (PreparedStatement pstmt = con.prepareStatement(SQL_BY_ID_CON_FACTURAS)) {
+			pstmt.setLong(1, id);
+			
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while(rs.next()) {
+					if(!isClienteMostrado) {
+						mostrarCliente(rs);
+						
+						isClienteMostrado = true;
+					}
+					System.out.printf("%s, %s\n"
+							,rs.getString("f.numero")
+							,rs.getString("f.fecha"));
+				}
+			}
+			
+		} catch (SQLException e) {
+			System.err.println("No se ha podido realizar la consulta getByIdConFacturas()");
+			System.err.println(e.getMessage());
+		}
+	}
+	
+	private static void mostrarCliente(ResultSet rs) throws SQLException {
+		System.out.printf("""
+				
+				CLIENTE
+				=========
+				
+				ID:                   %s
+				DNI:                  %s
+				DNI_DIFERENCIAL:      %s
+				NOMBRE:               %s
+				APELLIDOS:            %s
+				FECHA DE NACIMIENTO:  %s
+				
+						
+				""",
+		rs.getString("c.id"),
+		rs.getString("c.dni"),
+		rs.getString("c.dni_diferencial"),
+		rs.getString("c.nombre"),
+		rs.getString("c.apellidos"),
+		rs.getString("c.fecha_nacimiento"));
+	}
+	
 
 }
