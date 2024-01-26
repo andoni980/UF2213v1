@@ -13,8 +13,8 @@ import static com.dev.ipartek.bibliotecas.UtilesDeConsola.*;
 public class ClienteApp {
 
 	private static final String URL = "jdbc:mysql://localhost:3306/manana_tienda";
-	private static final String USER = "andoni";
-	private static final String PASS = "andoni";
+	private static final String USER = "root";
+	private static final String PASS = System.getenv("MANANA_TIENDA_PASSWORD");
 	
 	private static final String SQL_CAMPOS = "dni,dni_diferencial,nombre,apellidos,fecha_nacimiento";
 	private static final String SQL_SELECT_ALL = "SELECT id, " + SQL_CAMPOS + " FROM clientes ";
@@ -24,7 +24,7 @@ public class ClienteApp {
 	private static final String SQL_DELETE = "DELETE FROM clientes WHERE id=?";
 	private static final String SQL_BY_ID_CON_FACTURAS = """
 			SELECT 
-				c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento,
+		da		c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento,
 				f.numero, f.fecha
 			 FROM clientes AS c
 			 JOIN facturas AS f
