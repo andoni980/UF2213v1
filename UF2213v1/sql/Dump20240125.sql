@@ -75,36 +75,6 @@ CREATE TABLE `facturas_has_productos` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `habitaciones`
---
-
-DROP TABLE IF EXISTS `habitaciones`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `habitaciones` (
-  `numero` char(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `hoteles_id` bigint NOT NULL,
-  PRIMARY KEY (`numero`,`hoteles_id`),
-  KEY `fk_habitaciones_hoteles1_idx` (`hoteles_id`),
-  CONSTRAINT `fk_habitaciones_hoteles1` FOREIGN KEY (`hoteles_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `hoteles`
---
-
-DROP TABLE IF EXISTS `hoteles`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `hoteles` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `productos`
 --
 
