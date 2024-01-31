@@ -1,14 +1,18 @@
 package com.dev.ipartek.uf2213v1;
 
 
+import static com.dev.ipartek.bibliotecas.UtilesDeConsola.OPCIONAL;
+import static com.dev.ipartek.bibliotecas.UtilesDeConsola.readFecha;
+import static com.dev.ipartek.bibliotecas.UtilesDeConsola.readInt;
+import static com.dev.ipartek.bibliotecas.UtilesDeConsola.readLong;
+import static com.dev.ipartek.bibliotecas.UtilesDeConsola.readString;
+
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-
-import static com.dev.ipartek.bibliotecas.UtilesDeConsola.*;
 
 public class ClienteApp {
 
@@ -16,39 +20,13 @@ public class ClienteApp {
 	private static final String USER = "root";
 	private static final String PASS = System.getenv("MANANA_TIENDA_PASSWORD");
 	
-	private static final String SQL_CAMPOS = "dni,dni_diferencial,nombre,apellidos,fecha_nacimiento";
-	private static final String SQL_SELECT_ALL = "SELECT id, " + SQL_CAMPOS + " FROM clientes ";
-	private static final String SQL_SELECT_BY_ID = "SELECT id, " + SQL_CAMPOS + " FROM clientes c WHERE id=?";
-	private static final String SQL_INSERT = "INSERT INTO clientes ( " + SQL_CAMPOS + ") VALUES(?,?,?,?,?)";
-	private static final String SQL_UPDATE = "UPDATE clientes SET dni=?, dni_diferencial=?, nombre=?, apellidos=?, fecha_nacimiento=? WHERE id=?";
-	private static final String SQL_DELETE = "DELETE FROM clientes WHERE id=?";
-	private static final String SQL_BY_ID_CON_FACTURAS = """
-			SELECT 
-				c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento,
-				f.numero, f.fecha
-			 FROM clientes AS c
-			 JOIN facturas AS f
-			 ON f.clientes_id = c.id 
-			 WHERE c.id = ?;
-			""";
-	private static final String SQL_BY_ID_CON_FACTURAS_CON_PRODUCTOS = """
-		SELECT 
-			c.id, c.dni, c.dni_diferencial, c.nombre, c.apellidos, c.fecha_nacimiento,
-			f.numero, f.fecha, f.id,
-            fp.cantidad,
-            p.nombre, p.precio, p.id,
-            p.precio * fp.cantidad AS total
-            
-		FROM clientes AS c
-		JOIN facturas AS f
-		ON f.clientes_id = c.id 
-		JOIN facturas_has_productos AS fp
-		ON fp.facturas_id = f.id
-		JOIN productos AS p
-		ON fp.productos_id = p.id 
-		WHERE c.id = ?
-		ORDER BY f.id,p.id;
-		""";
+	private static final String SQL_SELECT_ALL = "Call clientes_select_all()";
+	private static final String SQL_SELECT_BY_ID = "Call clientes_select_by_id(?)";
+	private static final String SQL_INSERT = "Call clientes_save(?,?,?,?,?)";
+	private static final String SQL_UPDATE = "Call clientes_update(?,?,?,?,?,?)";
+	private static final String SQL_DELETE = "Call clientes_delete(?)";
+	private static final String SQL_BY_ID_CON_FACTURAS = "Call clientes_by_id_facturas(?)";
+	private static final String SQL_BY_ID_CON_FACTURAS_CON_PRODUCTOS = "Call clientes_by_id_facturas_productos(?)";
 	
 	private static final int SALIR = 0;
 	private static final int VER_TODOS = 1;
@@ -137,8 +115,8 @@ public class ClienteApp {
 
 	private static void getAll() {
 		
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_SELECT_ALL);
-			ResultSet rs = pstmt.executeQuery()) {
+		try (CallableStatement cstmt = con.prepareCall(SQL_SELECT_ALL);
+			ResultSet rs = cstmt.executeQuery()) {
 			
 			while(rs.next()) {
 //			 System.out.printf("%s\t;%s\t;%s\t;%s\t;%s\t;%s%n",
@@ -163,9 +141,9 @@ public class ClienteApp {
 	}
 	
 	private static void getById(Long id) {
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_SELECT_BY_ID)) {
-			pstmt.setLong(1, id);
-			try (ResultSet rs = pstmt.executeQuery()) {
+		try (CallableStatement cstmt = con.prepareCall(SQL_SELECT_BY_ID)) {
+			cstmt.setLong(1, id);
+			try (ResultSet rs = cstmt.executeQuery()) {
 				if(rs.next()) {
 					mostrarCliente(rs);
 				}
@@ -188,14 +166,14 @@ public class ClienteApp {
 	}
 	
 	private static void save(String dni, Integer dniDiferencial, String nombre, String apellidos, LocalDate fechaNacimiento) {
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_INSERT)) {
-			pstmt.setString(1, dni);
-			pstmt.setInt(2, dniDiferencial);
-			pstmt.setString(3, nombre);
-			pstmt.setString(4, apellidos);
-			pstmt.setDate(5, java.sql.Date.valueOf(fechaNacimiento));
+		try (CallableStatement cstmt = con.prepareCall(SQL_INSERT)) {
+			cstmt.setString(1, dni);
+			cstmt.setInt(2, dniDiferencial);
+			cstmt.setString(3, nombre);
+			cstmt.setString(4, apellidos);
+			cstmt.setDate(5, java.sql.Date.valueOf(fechaNacimiento));
 			
-			int numeroRegistrosInsertados = pstmt.executeUpdate();
+			int numeroRegistrosInsertados = cstmt.executeUpdate();
 			System.out.println("Número de Registros insertados: " + numeroRegistrosInsertados);
 		} catch (SQLException e) {
 			System.err.println("No se ha podido realizar la consulta save()");
@@ -216,16 +194,16 @@ public class ClienteApp {
 	}
 	
 	private static void update(Long id, String dni, Integer dniDiferencial, String nombre, String apellidos, LocalDate fechaNacimiento) {
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_UPDATE)) {
+		try (CallableStatement cstmt = con.prepareCall(SQL_UPDATE)) {
 			
-			pstmt.setString(1, dni);
-			pstmt.setInt(2, dniDiferencial);
-			pstmt.setString(3, nombre);
-			pstmt.setString(4, apellidos);
-			pstmt.setDate(5, java.sql.Date.valueOf(fechaNacimiento));
-			pstmt.setLong(6, id);
+			cstmt.setString(1, dni);
+			cstmt.setInt(2, dniDiferencial);
+			cstmt.setString(3, nombre);
+			cstmt.setString(4, apellidos);
+			cstmt.setDate(5, java.sql.Date.valueOf(fechaNacimiento));
+			cstmt.setLong(6, id);
 			
-			int numeroRegistrosModificados = pstmt.executeUpdate();
+			int numeroRegistrosModificados = cstmt.executeUpdate();
 			System.out.println("Número de Registros modificados: " + numeroRegistrosModificados);
 			
 		} catch (SQLException e) {
@@ -241,11 +219,11 @@ public class ClienteApp {
 	}
 	
 	private static void delete(Long id) {
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_DELETE)) {
+		try (CallableStatement cstmt = con.prepareCall(SQL_DELETE)) {
 			
-			pstmt.setLong(1,id);
+			cstmt.setLong(1,id);
 			
-			int numeroRegistrosBorrados = pstmt.executeUpdate();
+			int numeroRegistrosBorrados = cstmt.executeUpdate();
 			System.out.println("Número de registros eliminados: " + numeroRegistrosBorrados);
 			
 		} catch (SQLException e) {
@@ -262,10 +240,10 @@ public class ClienteApp {
 	private static void getByIdConFacturas(Long id) {
 		boolean isClienteMostrado = false;
 		
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_BY_ID_CON_FACTURAS)) {
-			pstmt.setLong(1, id);
+		try (CallableStatement cstmt = con.prepareCall(SQL_BY_ID_CON_FACTURAS)) {
+			cstmt.setLong(1, id);
 			
-			try (ResultSet rs = pstmt.executeQuery()) {
+			try (ResultSet rs = cstmt.executeQuery()) {
 				while(rs.next()) {
 					if(!isClienteMostrado) {
 						mostrarCliente(rs);
@@ -291,10 +269,10 @@ public class ClienteApp {
 		boolean isClienteMostrado = false;
 		Long idFacturaAnterior = null;
 		
-		try (PreparedStatement pstmt = con.prepareStatement(SQL_BY_ID_CON_FACTURAS_CON_PRODUCTOS)) {
-			pstmt.setLong(1, id);
+		try (CallableStatement cstmt = con.prepareCall(SQL_BY_ID_CON_FACTURAS_CON_PRODUCTOS)) {
+			cstmt.setLong(1, id);
 			
-			try (ResultSet rs = pstmt.executeQuery()) {
+			try (ResultSet rs = cstmt.executeQuery()) {
 				while(rs.next()) {
 					if(!isClienteMostrado) {
 						mostrarCliente(rs);
